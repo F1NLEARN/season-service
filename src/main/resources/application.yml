@@ -43,10 +43,13 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,refresh
+        include: health,info,prometheus
   endpoint:
     health:
       show-details: always
+  tracing:
+    sampling:
+      probability: 1.0
 
 internal:
   achievement-service:
