@@ -25,7 +25,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("SeasonService")
@@ -42,25 +43,28 @@ class SeasonServiceTest {
 
     private Season mockSeason(SeasonStatus status) {
         Season season = mock(Season.class);
-        given(season.getSeasonId()).willReturn(UUID.randomUUID());
-        given(season.getSeasonNumber()).willReturn(1);
-        given(season.getStartDate()).willReturn(LocalDate.of(2025, 1, 1));
-        given(season.getEndDate()).willReturn(LocalDate.of(2025, 1, 31));
         given(season.getStatus()).willReturn(status);
+
+        lenient().when(season.getSeasonId()).thenReturn(UUID.randomUUID());
+        lenient().when(season.getSeasonNumber()).thenReturn(1);
+        lenient().when(season.getStartDate()).thenReturn(LocalDate.of(2025, 1, 1));
+        lenient().when(season.getEndDate()).thenReturn(LocalDate.of(2025, 1, 31));
         return season;
     }
 
     private SeasonParticipant mockParticipant(Season season, UUID userId) {
         SeasonParticipant participant = mock(SeasonParticipant.class);
-        given(participant.getSeasonParticipantId()).willReturn(UUID.randomUUID());
-        given(participant.getSeason()).willReturn(season);
         given(participant.getUserId()).willReturn(UserId.of(userId));
-        given(participant.getUserNickname()).willReturn("테스트유저");
-        given(participant.getBaseSeedMoney()).willReturn(1000);
-        given(participant.getAchievementBonus()).willReturn(0);
-        given(participant.getRankingBonus()).willReturn(0);
         given(participant.getTotalSeedMoney()).willReturn(1000);
-        given(participant.getParsedCategories()).willReturn(List.of(PassedCategory.STOCK, PassedCategory.ETF));
+
+        lenient().when(participant.getSeasonParticipantId()).thenReturn(UUID.randomUUID());
+        lenient().when(participant.getSeason()).thenReturn(season);
+        lenient().when(participant.getUserNickname()).thenReturn("테스트유저");
+        lenient().when(participant.getBaseSeedMoney()).thenReturn(1000);
+        lenient().when(participant.getAchievementBonus()).thenReturn(0);
+        lenient().when(participant.getRankingBonus()).thenReturn(0);
+        lenient().when(participant.getParsedCategories())
+                .thenReturn(List.of(PassedCategory.STOCK, PassedCategory.ETF));
         return participant;
     }
 
@@ -75,8 +79,8 @@ class SeasonServiceTest {
         @Test
         @DisplayName("전체 시즌 목록을 반환한다")
         void getAllSeasons_전체_시즌_반환() {
-            Season season1 = mockSeason(SeasonStatus.ENDED);
-            Season season2 = mockSeason(SeasonStatus.ACTIVE);
+            Season season1 = mock(Season.class);
+            Season season2 = mock(Season.class);
             given(seasonRepository.findAll()).willReturn(List.of(season1, season2));
 
             List<Season> result = seasonService.getAllSeasons();
@@ -148,7 +152,7 @@ class SeasonServiceTest {
     }
 
     // ────────────────────────────────────────────────────────────────
-    // 시즌 참여 등록 및 조회
+    // 시즌 참여 등록
     // ────────────────────────────────────────────────────────────────
 
     @Nested
@@ -260,6 +264,10 @@ class SeasonServiceTest {
         }
     }
 
+    // ────────────────────────────────────────────────────────────────
+    // 시즌 참여 조회
+    // ────────────────────────────────────────────────────────────────
+
     @Nested
     @DisplayName("getMyParticipation()")
     class GetMyParticipation {
@@ -270,7 +278,7 @@ class SeasonServiceTest {
         @Test
         @DisplayName("참여 정보가 있으면 SeasonParticipant를 반환한다")
         void getMyParticipation_정상_반환() {
-            Season season = mockSeason(SeasonStatus.ACTIVE);
+            Season season = mock(Season.class);
             SeasonParticipant participant = mockParticipant(season, USER_ID);
             given(participantRepository.findBySeasonIdAndUserId(SEASON_ID, USER_ID))
                     .willReturn(Optional.of(participant));
