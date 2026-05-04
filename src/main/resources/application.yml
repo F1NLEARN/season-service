@@ -4,55 +4,29 @@ server:
 spring:
   application:
     name: season-service
+  profiles:
+    active: local
+    group:
+      docker: "kafka,topics"
   config:
     import: optional:configserver:http://localhost:8888
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:5432/${DB_NAME:seasondb}
+    url: jdbc:postgresql://localhost:5432/seasondb
     driver-class-name: org.postgresql.Driver
     username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
-  kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
-    consumer:
-      group-id: season-service
-      auto-offset-reset: earliest
-  data:
-    redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
+    password: ${DB_PASSWORD:}
 
 eureka:
   instance:
-    prefer-ip-address: false
-    hostname: localhost
-    instance-id: ${spring.application.name}:${server.port}
+    prefer-ip-address: true
   client:
     register-with-eureka: true
     fetch-registry: true
     service-url:
-      defaultZone: http://${EUREKA_URL1:localhost}:8761/eureka/
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,prometheus
-  endpoint:
-    health:
-      show-details: always
-  tracing:
-    sampling:
-      probability: 1.0
+      defaultZone: http://localhost:8761/eureka/
 
 internal:
   achievement-service:
-    url: ${ACHIEVEMENT_SERVICE_URL:http://localhost:8085}
+    url: http://localhost:8085
   ranking-service:
-    url: ${RANKING_SERVICE_URL:http://localhost:8086}
+    url: http://localhost:8086
