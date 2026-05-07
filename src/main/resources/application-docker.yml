@@ -5,6 +5,10 @@ spring:
     url: jdbc:postgresql://finlearn-postgres:5432/seasondb
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:postgres}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
   data:
     redis:
       host: finlearn-redis
@@ -22,6 +26,14 @@ internal:
     url: http://finlearn-achievement-service:8085
   ranking-service:
     url: http://finlearn-ranking-service:8086
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: http://zipkin:9411/api/v2/spans
 
 loki:
   url: http://host.docker.internal:3100/loki/api/v1/push

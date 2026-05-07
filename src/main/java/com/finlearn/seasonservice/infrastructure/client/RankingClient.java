@@ -12,7 +12,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
-
 import java.util.UUID;
 
 @Slf4j
@@ -26,12 +25,9 @@ public class RankingClient {
     private String rankingServiceUrl;
 
     /**
-     * 특정 시즌, 유저의 최종 순위 조회
-     * GET /api/v1/rankings/seasons/{seasonId}/me
-     *
-     * @param userId   유저 ID
-     * @param seasonId 조회 대상 시즌 ID
-     * @return 순위 (조회 실패 또는 미참여 시 null 반환)
+     * TODO: ranking-service 내부 API 구현
+     * 특정 시즌, 유저의 ALL 랭킹 순위 조회
+     * ranking-service 내부 API 구현 전까지 항상 null 반환 (보너스 0 적용)
      */
     public Integer getRank(UUID userId, UUID seasonId) {
         try {

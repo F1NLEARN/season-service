@@ -10,7 +10,8 @@ import java.util.UUID;
 
 public interface SeasonJpaRepository extends JpaRepository<Season, UUID> {
 
-    Optional<Season> findByStatus(SeasonStatus status);
+    // 특정 상태의 시즌을 하나 조회
+    Optional<Season> findFirstByStatusOrderBySeasonNumberAsc(SeasonStatus status);
 
     List<Season> findAllByStatusOrderBySeasonNumberDesc(SeasonStatus status);
 

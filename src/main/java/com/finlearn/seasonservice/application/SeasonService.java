@@ -136,7 +136,7 @@ public class SeasonService {
 
     /**
      * RankingFinalized 이벤트 수신 후 처리
-     * 종료된 시즌 기준으로 다음 시즌 참여자들의 시드머니 보너스를 갱신
+     * 종료된 시즌 기준으로 다음 시즌(UPCOMING) 참여자들의 시드머니 보너스를 갱신
      */
     @Transactional
     public void processRankingFinalized(UUID endedSeasonId) {
@@ -159,25 +159,27 @@ public class SeasonService {
             int rankingBonus = calculateRankingBonus(userId, endedSeasonId);
 
             participant.applyBonuses(achievementBonus, rankingBonus);
-            participantRepository.save(participant);
 
             log.debug("[SeasonService] 시드머니 보너스 적용: userId={}, achievement={}, ranking={}, total={}",
                     userId, achievementBonus, rankingBonus, participant.getTotalSeedMoney());
         }
+
+        // 개별 save → saveAll 일괄 처리로 DB 라운드트립 최소화
+        participantRepository.saveAll(nextParticipants);
 
         log.info("[SeasonService] RankingFinalized 처리 완료: 총 {}명 업데이트", nextParticipants.size());
     }
 
     /**
      * UserProfileUpdated 이벤트 수신 후 처리
-     * season_participants의 user_nickname VO 스냅샷 갱신
+     * season_participants의 user_nickname 스냅샷 갱신
      */
     @Transactional
-    public void syncUserNickname(UUID userId, String newNickname) {
+    public void syncUserProfile(UUID userId, String newNickname) {
         List<SeasonParticipant> participants = participantRepository.findAllByUserId(userId);
         participants.forEach(p -> p.updateNickname(newNickname));
         participantRepository.saveAll(participants);
-        log.info("[SeasonService] 닉네임 스냅샷 갱신 완료: userId={}, nickname={}, count={}",
+        log.info("[SeasonService] 유저 프로필 스냅샷 갱신 완료: userId={}, nickname={}, count={}",
                 userId, newNickname, participants.size());
     }
 
@@ -191,7 +193,8 @@ public class SeasonService {
      * 1~3개: 200
      * 4~7개: 500
      * 8개 이상: 1000
-     */    private int calculateAchievementBonus(UUID userId, UUID seasonId) {
+     */
+    private int calculateAchievementBonus(UUID userId, UUID seasonId) {
         int count = achievementClient.getAchievementCount(userId, seasonId);
         if (count == 0) return 0;
         if (count <= 3) return 200;
@@ -205,7 +208,8 @@ public class SeasonService {
      * 2~5위: 100
      * 6~20위: 50
      * 21위 이상: 0
-     */    private int calculateRankingBonus(UUID userId, UUID seasonId) {
+     */
+    private int calculateRankingBonus(UUID userId, UUID seasonId) {
         Integer rank = rankingClient.getRank(userId, seasonId);
         if (rank == null) return 0;
         if (rank == 1) return 200;
