@@ -28,7 +28,8 @@ public class SeasonRepositoryImpl implements SeasonRepository {
 
     @Override
     public Optional<Season> findByStatus(SeasonStatus status) {
-        return seasonJpaRepository.findByStatus(status);
+        // findByStatus 대신 findFirstByStatus 사용 — 동일 status 다중 존재 시 예외 방지
+        return seasonJpaRepository.findFirstByStatusOrderBySeasonNumberAsc(status);
     }
 
     @Override

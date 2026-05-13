@@ -38,3 +38,6 @@ out/
 
 .DS_Storessl/
 *.jks
+.DS_Store
+
+application-local.yml
