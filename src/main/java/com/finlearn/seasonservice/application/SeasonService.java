@@ -22,6 +22,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Service
@@ -136,7 +137,7 @@ public class SeasonService {
 
     /**
      * RankingFinalized 이벤트 수신 후 처리
-     * 종료된 시즌 기준으로 다음 시즌(UPCOMING) 참여자들의 시드머니 보너스를 갱신
+     * 종료된 시즌 기준으로 다음 시즌 참여자들의 시드머니 보너스를 갱신
      */
     @Transactional
     public void processRankingFinalized(UUID endedSeasonId) {
@@ -152,19 +153,20 @@ public class SeasonService {
         List<SeasonParticipant> nextParticipants =
                 participantRepository.findAllBySeasonId(nextSeason.getSeasonId());
 
-        for (SeasonParticipant participant : nextParticipants) {
-            UUID userId = participant.getUserId().getValue();
+        // 참여자별 보너스 산정을 병렬로 실행 — HTTP 호출(achievement, ranking)을 동시에 처리
+        List<CompletableFuture<Void>> futures = nextParticipants.stream()
+                .map(participant -> CompletableFuture.runAsync(() -> {
+                    UUID userId = participant.getUserId().getValue();
+                    int achievementBonus = calculateAchievementBonus(userId, endedSeasonId);
+                    int rankingBonus = calculateRankingBonus(userId, endedSeasonId);
+                    participant.applyBonuses(achievementBonus, rankingBonus);
+                    log.debug("[SeasonService] 시드머니 보너스 적용: userId={}, achievement={}, ranking={}, total={}",
+                            userId, achievementBonus, rankingBonus, participant.getTotalSeedMoney());
+                }))
+                .toList();
 
-            int achievementBonus = calculateAchievementBonus(userId, endedSeasonId);
-            int rankingBonus = calculateRankingBonus(userId, endedSeasonId);
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 
-            participant.applyBonuses(achievementBonus, rankingBonus);
-
-            log.debug("[SeasonService] 시드머니 보너스 적용: userId={}, achievement={}, ranking={}, total={}",
-                    userId, achievementBonus, rankingBonus, participant.getTotalSeedMoney());
-        }
-
-        // 개별 save → saveAll 일괄 처리로 DB 라운드트립 최소화
         participantRepository.saveAll(nextParticipants);
 
         log.info("[SeasonService] RankingFinalized 처리 완료: 총 {}명 업데이트", nextParticipants.size());
