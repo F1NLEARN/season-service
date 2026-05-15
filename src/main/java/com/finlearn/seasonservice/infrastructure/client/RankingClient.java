@@ -4,9 +4,6 @@ import com.finlearn.seasonservice.infrastructure.client.dto.RankingGradeResponse
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
@@ -25,24 +22,21 @@ public class RankingClient {
     private String rankingServiceUrl;
 
     /**
-     * TODO: ranking-service 내부 API 구현
-     * 특정 시즌, 유저의 ALL 랭킹 순위 조회
-     * ranking-service 내부 API 구현 전까지 항상 null 반환 (보너스 0 적용)
+     * 시즌 종료 후 확정된 유저의 ALL 랭킹 순위 조회
+     * ranking-service 내부 API: GET /internal/v1/rankings/seasons/{seasonId}/rank?userId={userId}
+     * 랭킹 확정 전이거나 조회 실패 시 null 반환 → 보너스 0 적용
      */
     public Integer getRank(UUID userId, UUID seasonId) {
         try {
             String url = UriComponentsBuilder
                     .fromHttpUrl(rankingServiceUrl)
-                    .path("/api/v1/rankings/seasons/{seasonId}/me")
+                    .path("/internal/v1/rankings/seasons/{seasonId}/rank")
+                    .queryParam("userId", userId.toString())
                     .buildAndExpand(seasonId.toString())
                     .toUriString();
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("X-User-Id", userId.toString());
-            HttpEntity<Void> entity = new HttpEntity<>(headers);
-
             ResponseEntity<RankingGradeResponse> response =
-                    restTemplate.exchange(url, HttpMethod.GET, entity, RankingGradeResponse.class);
+                    restTemplate.getForEntity(url, RankingGradeResponse.class);
 
             RankingGradeResponse body = response.getBody();
             if (body == null) {
